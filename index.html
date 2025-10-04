@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Погода 7 дней — карусель</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="top" aria-hidden="false">
+      <h1>Прогноз погоды</h1>
+      <p class="subtitle">Введи город — покажу прогноз на ближайшие 7 дней</p>
+    </header>
+
+    <form id="weather-form" class="controls" autocomplete="off" aria-label="Поиск города">
+      <div class="autocomplete">
+        <input id="city" type="text" placeholder="Город (рус/eng)" aria-label="Город" />
+        <ul id="suggestions" class="suggestions" role="listbox" aria-label="Подсказки"></ul>
+      </div>
+      <button id="btn" type="submit">Показать</button>
+    </form>
+
+    <div id="meta" class="meta" aria-live="polite"></div>
+    <div id="message" class="message" aria-live="polite"></div>
+
+    <div class="carousel" id="carousel">
+      <button class="carousel-btn prev" id="prevBtn" aria-label="Предыдущие" type="button">&#10094;</button>
+      <div id="forecast" class="forecast-grid" role="list" aria-label="Прогноз на 7 дней"></div>
+      <button class="carousel-btn next" id="nextBtn" aria-label="Следующие" type="button">&#10095;</button>
+    </div>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
