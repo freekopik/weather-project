@@ -1,6 +1,6 @@
-// main.js — карусель + автодополнение + 7-дневный прогноз (исправленная логика)
+// main.js — карусель + автодополнение + 7-дневный прогноз
 
-// SVG-иконки (как раньше)
+// SVG-иконки
 const ICONS = {
   sunny: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`,
   partly: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="3"></circle><path d="M21 16a5 5 0 0 0-9.9-1"/><path d="M3 18h14a4 4 0 0 0 0-8"/></svg>`,
@@ -12,17 +12,18 @@ const ICONS = {
   unknown: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.09 9a3 3 0 1 1 5.82 1c0 1.5-1.5 2.2-1.5 2.2"/><path d="M12 17h.01"/></svg>`
 };
 
+// WEATHER_META
 const WEATHER_META = {
-  0:  { key:'sunny',  label:'Ясно',                    color:'#F6C177', inner:'#FFF6E6', innerHover:'#FFE8B3' },
-  1:  { key:'sunny',  label:'Преимущественно ясно',    color:'#F6D7A3', inner:'#FFFBF0', innerHover:'#FFF2D6' },
-  2:  { key:'partly', label:'Переменная облачность',   color:'#C7D3E0', inner:'#F6F8FA', innerHover:'#E7EDF6' },
-  3:  { key:'cloud',  label:'Пасмурно',                color:'#AAB8C8', inner:'#F2F4F6', innerHover:'#E6E9EE' },
-  45: { key:'fog',    label:'Туман',                   color:'#CFCFCF', inner:'#FBFBFB', innerHover:'#EDEDED' },
-  48: { key:'fog',    label:'Инейный туман',           color:'#CFCFCF', inner:'#FBFBFB', innerHover:'#EDEDED' },
-  51: { key:'rain',   label:'Лёгкая морось',           color:'#9FCBEA', inner:'#F2FAFF', innerHover:'#DDF3FF' },
-  61: { key:'rain',   label:'Дождь',                   color:'#8FBCE6', inner:'#EAF8FF', innerHover:'#D4F0FF' },
-  71: { key:'snow',   label:'Снег',                    color:'#CFE9FF', inner:'#F8FBFF', innerHover:'#E0F0FF' },
-  95: { key:'thunder',label:'Гроза',                   color:'#E2C1FF', inner:'#FFF6FF', innerHover:'#FFE6FF' }
+  0:  { key:'sunny',  label:'Ясно', color:'#F6C177', inner:'#FFF6E6', innerHover:'#FFE8B3' },
+  1:  { key:'sunny',  label:'Преимущественно ясно', color:'#F6D7A3', inner:'#FFFBF0', innerHover:'#FFF2D6' },
+  2:  { key:'partly', label:'Переменная облачность', color:'#C7D3E0', inner:'#F6F8FA', innerHover:'#E7EDF6' },
+  3:  { key:'cloud',  label:'Пасмурно', color:'#AAB8C8', inner:'#F2F4F6', innerHover:'#E6E9EE' },
+  45: { key:'fog',    label:'Туман', color:'#CFCFCF', inner:'#FBFBFB', innerHover:'#EDEDED' },
+  48: { key:'fog',    label:'Инейный туман', color:'#CFCFCF', inner:'#FBFBFB', innerHover:'#EDEDED' },
+  51: { key:'rain',   label:'Лёгкая морось', color:'#9FCBEA', inner:'#F2FAFF', innerHover:'#DDF3FF' },
+  61: { key:'rain',   label:'Дождь', color:'#8FBCE6', inner:'#EAF8FF', innerHover:'#D4F0FF' },
+  71: { key:'snow',   label:'Снег', color:'#CFE9FF', inner:'#F8FBFF', innerHover:'#E0F0FF' },
+  95: { key:'thunder',label:'Гроза', color:'#E2C1FF', inner:'#FFF6FF', innerHover:'#FFE6FF' }
 };
 
 // DOM
@@ -56,8 +57,8 @@ function formatLabel(dateStr){
   return new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' }).format(dt);
 }
 function getVisibleCount(){
-  if (window.innerWidth < 600) return 1;
-  if (window.innerWidth < 900) return 2;
+  if(window.innerWidth < 600) return 1;
+  if(window.innerWidth < 900) return 2;
   return 3;
 }
 function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
@@ -66,14 +67,14 @@ function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
 async function geocode(q){
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=ru`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Ошибка геокодинга');
+  if(!res.ok) throw new Error('Ошибка геокодинга');
   const data = await res.json();
   return data.results || [];
 }
 async function fetchForecast(lat, lon, start, end){
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&start_date=${start}&end_date=${end}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Ошибка прогноза');
+  if(!res.ok) throw new Error('Ошибка прогноза');
   return res.json();
 }
 
@@ -87,7 +88,7 @@ function renderForecast(cityLabel, lat, lon, weatherData){
   const tmin = (weatherData.daily && weatherData.daily.temperature_2m_min) || [];
   const codes = (weatherData.daily && weatherData.daily.weathercode) || [];
 
-  if (!times.length){
+  if(!times.length){
     messageEl.textContent = 'Нет данных для выбранного города.';
     carousel.classList.remove('has-content');
     lastRenderedCount = 0;
@@ -96,7 +97,7 @@ function renderForecast(cityLabel, lat, lon, weatherData){
   }
 
   messageEl.textContent = '';
-  times.forEach((dateStr, i) => {
+  times.forEach((dateStr,i)=>{
     const max = (tmax[i] !== undefined) ? Math.round(tmax[i]) : '—';
     const min = (tmin[i] !== undefined) ? Math.round(tmin[i]) : '—';
     const code = codes[i];
@@ -120,17 +121,18 @@ function renderForecast(cityLabel, lat, lon, weatherData){
     forecastEl.appendChild(card);
   });
 
-  // После рендера показываем стрелки и корректируем карусель
   lastRenderedCount = forecastEl.querySelectorAll('.card').length;
   carousel.classList.add('has-content');
-  currentIndex = 0;
 
-  // Если карточек меньше либо равно видимых — показываем без скролла и скрываем стрелки
-  requestAnimationFrame(() => setTimeout(() => {
-    adjustCarouselAfterRender();
-  }, 60));
+  // Ставим сегодня в начало карусели
+  const todayStr = new Date().toISOString().slice(0,10);
+  const todayIndex = times.findIndex(d => d === todayStr);
+  currentIndex = todayIndex >= 0 ? todayIndex : 0;
+
+  requestAnimationFrame(()=>setTimeout(()=>adjustCarouselAfterRender(),60));
 }
 
+// ПОКАЗАТЬ ЛОАДЕР
 function showLoading(){
   forecastEl.innerHTML = '';
   metaEl.textContent = '';
@@ -142,22 +144,22 @@ function showLoading(){
 
 // AUTOCOMPLETE
 let acController = null;
-cityInput.addEventListener('input', async () => {
+cityInput.addEventListener('input', async ()=>{
   const q = cityInput.value.trim();
   suggestionsEl.innerHTML = '';
   cityInput.removeAttribute('data-lat');
   cityInput.removeAttribute('data-lon');
-  if (q.length < 2) return;
-  try {
-    if (acController) acController.abort();
+  if(q.length < 2) return;
+  try{
+    if(acController) acController.abort();
     acController = new AbortController();
     const results = await geocode(q);
     acController = null;
     suggestionsEl.innerHTML = '';
-    results.forEach(r => {
+    results.forEach(r=>{
       const li = document.createElement('li');
-      li.textContent = `${r.name}${r.admin1 ? ', ' + r.admin1 : ''}, ${r.country}`;
-      li.addEventListener('click', () => {
+      li.textContent = `${r.name}${r.admin1 ? ', '+r.admin1 : ''}, ${r.country}`;
+      li.addEventListener('click', ()=>{
         cityInput.value = r.name;
         cityInput.dataset.lat = r.latitude;
         cityInput.dataset.lon = r.longitude;
@@ -165,175 +167,158 @@ cityInput.addEventListener('input', async () => {
       });
       suggestionsEl.appendChild(li);
     });
-  } catch (err) {
+  }catch(err){
     suggestionsEl.innerHTML = '';
   }
 });
-document.addEventListener('click', (e) => { if (!e.target.closest('.autocomplete')) suggestionsEl.innerHTML = ''; });
+document.addEventListener('click',(e)=>{ if(!e.target.closest('.autocomplete')) suggestionsEl.innerHTML = ''; });
 
 // FORM SUBMIT
-form.addEventListener('submit', async (e) => {
+form.addEventListener('submit', async(e)=>{
   e.preventDefault();
   let city = cityInput.value.trim();
-  if (!city) return;
+  if(!city) return;
 
   showLoading();
   btn.disabled = true;
 
-  try {
+  try{
     let lat = cityInput.dataset.lat;
     let lon = cityInput.dataset.lon;
 
-    if (!lat || !lon) {
+    if(!lat || !lon){
       const results = await geocode(city);
-      if (!results.length) throw new Error('Город не найден');
+      if(!results.length) throw new Error('Город не найден');
       const r = results[0];
       lat = r.latitude; lon = r.longitude;
-      city = `${r.name}${r.admin1 ? ', ' + r.admin1 : ''}, ${r.country}`;
+      city = `${r.name}${r.admin1 ? ', '+r.admin1 : ''}, ${r.country}`;
       cityInput.dataset.lat = lat;
       cityInput.dataset.lon = lon;
     }
 
     const today = new Date();
     const start = today.toISOString().slice(0,10);
-    const end = addDaysISO(start, 6);
-    const forecastData = await fetchForecast(lat, lon, start, end);
+    const end = addDaysISO(start,6);
+    const forecastData = await fetchForecast(lat,lon,start,end);
     renderForecast(city, parseFloat(lat), parseFloat(lon), forecastData);
-  } catch (err) {
+  }catch(err){
     messageEl.textContent = `Ошибка: ${err.message || err}`;
     forecastEl.innerHTML = '';
     carousel.classList.remove('has-content');
     lastRenderedCount = 0;
     updateButtonsState();
-  } finally {
+  }finally{
     btn.disabled = false;
   }
 });
 
-// ========== КАРУСЕЛЬ ==========
-
+// КАРУСЕЛЬ
 function getGap(){
   const cs = window.getComputedStyle(forecastEl);
-  const gap = parseFloat(cs.getPropertyValue('gap')) || parseFloat(cs.getPropertyValue('column-gap')) || 16;
-  return gap;
+  return parseFloat(cs.getPropertyValue('gap')) || parseFloat(cs.getPropertyValue('column-gap')) || 16;
 }
 
-// после рендера — корректируем вид (скрыть стрелки если не нужно, центрировать)
-function adjustCarouselAfterRender(){
+function adjustCarouselAfterRender() {
   const cards = Array.from(forecastEl.querySelectorAll('.card'));
   const visible = getVisibleCount();
 
   if (cards.length <= visible) {
-    // если помещается полностью — показываем их без скролла
-    carousel.classList.add('no-scroll');
+    forecastEl.scrollLeft = 0;
     prevBtn.disabled = true;
     nextBtn.disabled = true;
-    // выставим scrollLeft 0
-    forecastEl.scrollLeft = 0;
+    carousel.classList.add('no-scroll');
     return;
   } else {
     carousel.classList.remove('no-scroll');
   }
 
-  // иначе включаем стрелки
-  prevBtn.disabled = true;
-  nextBtn.disabled = false;
-  updateCarousel();
-}
-
-// вычисляем и прокручиваем так, чтобы группа currentIndex..currentIndex+visible-1 была центрирована
-function updateCarousel(){
-  const cards = Array.from(forecastEl.querySelectorAll('.card'));
-  if (!cards.length) { prevBtn.disabled = true; nextBtn.disabled = true; return; }
-
-  const visible = getVisibleCount();
-  const gap = getGap();
-  // clamp index
   const maxIndex = Math.max(0, cards.length - visible);
   currentIndex = clamp(currentIndex, 0, maxIndex);
 
-  // ширина карточки (предполагаем, что все одинаковы)
+  updateCarousel(false); // старт без анимации
+}
+
+function updateCarousel(animate = true) {
+  const cards = Array.from(forecastEl.querySelectorAll('.card'));
+  if (!cards.length) return;
+
+  const visible = getVisibleCount();
+  const maxIndex = Math.max(0, cards.length - visible);
+  currentIndex = clamp(currentIndex, 0, maxIndex);
+
   const cardWidth = cards[0].offsetWidth;
-  const groupWidth = visible * cardWidth + (visible - 1) * gap;
+  const gap = getGap();
+  const targetScroll = (cardWidth + gap) * currentIndex;
 
-  // offset of first card in group
-  const firstCard = cards[currentIndex];
-  const offsetOfFirst = firstCard.offsetLeft;
+  forecastEl.scrollTo({
+    left: targetScroll,
+    behavior: animate ? 'smooth' : 'auto'
+  });
 
-  // target scroll so group is centered: offset - (containerWidth - groupWidth)/2
-  const containerWidth = forecastEl.clientWidth;
-  let target = offsetOfFirst - (containerWidth - groupWidth) / 2;
-
-  // clamp
-  const maxScroll = forecastEl.scrollWidth - containerWidth;
-  if (target < 0) target = 0;
-  if (target > maxScroll) target = maxScroll;
-
-  forecastEl.scrollTo({ left: Math.round(target), behavior: 'smooth' });
-
-  // update buttons state
-  prevBtn.disabled = currentIndex <= 0;
+  prevBtn.disabled = currentIndex === 0;
   nextBtn.disabled = currentIndex >= maxIndex;
 }
 
-function updateButtonsState(){
+function updateButtonsState() {
   const cards = Array.from(forecastEl.querySelectorAll('.card'));
   const visible = getVisibleCount();
+
   if (!cards.length || cards.length <= visible) {
     prevBtn.disabled = true;
     nextBtn.disabled = true;
     carousel.classList.remove('has-content');
     carousel.classList.add('no-scroll');
-  } else {
-    carousel.classList.add('has-content');
-    carousel.classList.remove('no-scroll');
-    const maxIndex = Math.max(0, cards.length - visible);
-    prevBtn.disabled = currentIndex <= 0;
-    nextBtn.disabled = currentIndex >= maxIndex;
+    return;
   }
+
+  const maxIndex = Math.max(0, cards.length - visible);
+  currentIndex = clamp(currentIndex, 0, maxIndex);
+
+  prevBtn.disabled = currentIndex === 0;
+  nextBtn.disabled = currentIndex >= maxIndex;
+  carousel.classList.add('has-content');
+  carousel.classList.remove('no-scroll');
 }
 
-// стрелки листают группами по visible
 prevBtn.addEventListener('click', () => {
-  const step = getVisibleCount();
-  currentIndex = currentIndex - step;
+  currentIndex -= getVisibleCount();
   updateCarousel();
 });
 nextBtn.addEventListener('click', () => {
-  const step = getVisibleCount();
-  currentIndex = currentIndex + step;
+  currentIndex += getVisibleCount();
   updateCarousel();
 });
 
-// ресайз — корректируем
+// свайп на мобилке
+let startX = 0;
+forecastEl.addEventListener('touchstart', (e) => { 
+  startX = e.touches[0].clientX; 
+});
+forecastEl.addEventListener('touchend', (e) => {
+  const diff = e.changedTouches[0].clientX - startX;
+  const thresh = 40;
+  const cards = forecastEl.querySelectorAll('.card');
+  const visible = getVisibleCount();
+  const maxIndex = Math.max(0, cards.length - visible);
+
+  if (diff > thresh) {
+    currentIndex = Math.max(0, currentIndex - visible);
+    updateCarousel();
+  } else if (diff < -thresh) {
+    currentIndex = Math.min(maxIndex, currentIndex + visible);
+    updateCarousel();
+  }
+});
+
+// пересчёт при ресайзе
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    // при ресайзе текущая группа может стать невалидной — пересчитаем
-    currentIndex = Math.min(currentIndex, Math.max(0, lastRenderedCount - getVisibleCount()));
+    const cards = forecastEl.querySelectorAll('.card');
+    const visible = getVisibleCount();
+    currentIndex = Math.min(currentIndex, Math.max(0, cards.length - visible));
     updateButtonsState();
-    updateCarousel();
+    updateCarousel(false);
   }, 120);
 });
-
-// свайп
-let startX = 0;
-forecastEl.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; });
-forecastEl.addEventListener('touchend', (e) => {
-  const diff = e.changedTouches[0].clientX - startX;
-  const thresh = 40;
-  if (diff > thresh) {
-    currentIndex = currentIndex - getVisibleCount();
-    updateCarousel();
-  } else if (diff < -thresh) {
-    currentIndex = currentIndex + getVisibleCount();
-    updateCarousel();
-  }
-});
-
-// инициализация — прячем стрелки пока нет данных
-carousel.classList.remove('has-content');
-carousel.classList.add('no-scroll');
-prevBtn.disabled = true;
-nextBtn.disabled = true;

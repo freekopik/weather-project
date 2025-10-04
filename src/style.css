@@ -170,8 +170,8 @@ h1 {
 .carousel-btn:disabled { opacity:0.45; cursor: default; }
 
 /* ---------- Forecast track (flex + smooth scroll) ---------- */
-.forecast-grid{
-  display:flex;
+.forecast-grid {
+  display: flex;
   gap: var(--gap);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -179,22 +179,22 @@ h1 {
   scroll-behavior: smooth;
   padding: 6px 24px 18px 24px;
   align-items: stretch;
-  justify-content: center; /* center by default */
+  /* justify-content убран — критично для scrollLeft! */
 }
-.forecast-grid::-webkit-scrollbar { display:none; }
+.forecast-grid::-webkit-scrollbar { display: none; }
 
-/* ---------- Card styles ---------- */
-.card{
-  scroll-snap-align: center;
+/* Убираем scroll-snap-align, чтобы не мешал */
+.card {
+  /* scroll-snap-align: center; ← УДАЛЕНО */
   border-radius: var(--card-radius);
   min-height: 150px;
   background: var(--card-inner, #fff);
   transition: transform var(--anim-speed) ease, background var(--anim-speed) ease;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 8px 24px rgba(16,24,40,0.06);
-  opacity:0;
+  opacity: 0;
   transform: translateY(20px);
   animation: fadeUp 0.6s forwards;
 }
@@ -227,7 +227,10 @@ h1 {
 
 /* ---------- States: when not enough cards (no scroll) ---------- */
 /* .carousel.no-scroll used to center and hide arrows when cards fit */
-.carousel.no-scroll .forecast-grid { justify-content: center; overflow-x: visible; }
+.carousel.no-scroll .forecast-grid {
+  justify-content: center;
+  overflow-x: hidden;
+}
 .carousel.no-scroll .carousel-btn { display: none !important; }
 
 /* ---------- Responsive widths for cards:
