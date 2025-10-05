@@ -264,4 +264,26 @@ button:focus, input:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241
   .card { min-height: 130px; }
 }
 
-/* end of file */
+.card .details {
+  max-height: 0;          /* изначально скрыто */
+  overflow: hidden;       /* скрываем содержимое при свернутом состоянии */
+  transition: max-height 0.35s ease, padding 0.35s ease; /* плавный переход */
+  padding: 0 0;           /* обнуляем внутренние отступы */
+}
+
+.card .details ul {
+  margin: 0;
+  padding: 0.5em 1em;    /* внутренние отступы для списка */
+  list-style: none;
+}
+
+.card .details li {
+  margin-bottom: 0.25em;
+}
+
+/* Класс для раскрытого состояния */
+.card .details.show {
+  max-height: 500px;     /* достаточно большое значение для содержимого */
+  padding: 0.5em 1em;    /* отступы при раскрытии */
+}
+
