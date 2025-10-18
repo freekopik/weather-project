@@ -72,7 +72,8 @@ async function geocode(q){
   return data.results || [];
 }
 async function fetchForecast(lat, lon, start, end){
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&start_date=${start}&end_date=${end}`;
+  const url =  `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,relative_humidity_2m_max,relative_humidity_2m_min,surface_pressure_max,surface_pressure_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_sum,sunshine_duration,precipitation_probability_max,uv_index_max,visibility_mean&timezone=auto&start_date=${start}&end_date=${end}`;
+;
   const res = await fetch(url);
   if(!res.ok) throw new Error('Ошибка прогноза');
   return res.json();
@@ -119,6 +120,29 @@ function renderForecast(cityLabel, lat, lon, weatherData){
       </div>
     `;
     forecastEl.appendChild(card);
+
+    card.addEventListener('click', () => {
+    const dayData = {
+      date: dateStr,
+      label: meta.label,
+      icon: iconSvg,
+      tempMax: max,
+      tempMin: min,
+      humidityMax: weatherData.daily.relative_humidity_2m_max?.[i],
+      humidityMin: weatherData.daily.relative_humidity_2m_min?.[i],
+      pressureMax: weatherData.daily.surface_pressure_max?.[i],
+      pressureMin: weatherData.daily.surface_pressure_min?.[i],
+      windSpeed: weatherData.daily.wind_speed_10m_max?.[i],
+      windDir: weatherData.daily.wind_direction_10m_dominant?.[i],
+      precipitation: weatherData.daily.precipitation_sum?.[i],
+      sunshine: weatherData.daily.sunshine_duration?.[i],
+      precipitationProb: weatherData.daily.precipitation_probability_max?.[i],
+      uvIndex: weatherData.daily.uv_index_max?.[i],
+      visibility: weatherData.daily.visibility_mean?.[i],
+    };
+    showModal(dayData);
+});
+
   });
 
   lastRenderedCount = forecastEl.querySelectorAll('.card').length;
@@ -322,3 +346,50 @@ window.addEventListener('resize', () => {
     updateCarousel(false);
   }, 120);
 });
+
+function showModal(data) {
+  let modal = document.getElementById('weather-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'weather-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal">
+        <button class="modal-close" aria-label="Закрыть">&times;</button>
+        <div class="modal-content"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', e => {
+      if (e.target === modal) modal.remove();
+    });
+  }
+
+  const content = modal.querySelector('.modal-content');
+  content.innerHTML = `
+    <div class="modal-header">
+      ${data.icon}
+      <div>
+        <h2>${formatLabel(data.date)} — ${data.label}</h2>
+        <p>${data.tempMin}° / ${data.tempMax}°</p>
+      </div>
+    </div>
+    <ul class="modal-details">
+      <li><strong>Влажность:</strong> ${data.humidityMin ?? '—'}–${data.humidityMax ?? '—'}%</li>
+      <li><strong>Давление:</strong> ${data.pressureMin ?? '—'}–${data.pressureMax ?? '—'} гПа</li>
+      <li><strong>Ветер:</strong> ${data.windSpeed ?? '—'} км/ч (${degToDir(data.windDir)})</li>
+      <li><strong>Осадки:</strong> ${data.precipitation ?? '—'} мм</li>
+      <li><strong>Солнечные часы:</strong> ${data.sunshine ?? '—'} ч</li>
+      <li><strong>Вероятность осадков:</strong> ${data.precipitationProb ?? '—'}%</li>
+      <li><strong>Индекс УФ:</strong> ${data.uvIndex ?? '—'}</li>
+      <li><strong>Видимость:</strong> ${data.visibility ?? '—'} м</li>
+    </ul>
+  `;
+}
+
+function degToDir(deg) {
+  if (deg == null) return '—';
+  const dirs = ['С', 'СВ', 'В', 'ЮВ', 'Ю', 'ЮЗ', 'З', 'СЗ'];
+  return dirs[Math.round(deg / 45) % 8];
+}
